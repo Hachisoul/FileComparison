@@ -1,0 +1,56 @@
+{
+  "name": "bulkcheck",
+  "productName": "BulkCheck",
+  "version": "1.0.0",
+  "description": "Compare many pairs of files side by side and see exactly which lines differ.",
+  "main": "src/main/main.js",
+  "author": "Hachisoul",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/**/*.test.js\"",
+    "dist:win": "electron-builder --win nsis portable --x64"
+  },
+  "dependencies": {
+    "diff": "9.0.0",
+    "exceljs": "4.4.0",
+    "mammoth": "1.13.0",
+    "pdfjs-dist": "6.4.299"
+  },
+  "devDependencies": {
+    "electron": "44.9.3",
+    "electron-builder": "26.17.0"
+  },
+  "build": {
+    "appId": "com.hachisoul.bulkcheck",
+    "productName": "BulkCheck",
+    "copyright": "Copyright \u00a9 2026 Hachisoul",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "build/icon.png",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "icon": "build/icon.ico",
+      "artifactName": "BulkCheck-${version}-${arch}-${target}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BulkCheck",
+      "artifactName": "BulkCheck-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "BulkCheck-Portable-${version}.${ext}"
+    }
+  }
+}
