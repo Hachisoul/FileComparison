@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:">
+  <title>BulkCheck</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="2" y="3" width="9" height="18" rx="2"/><rect x="13" y="3" width="9" height="18" rx="2"/><path d="M5 8h3M5 12h3M16 8h3M16 12h3M16 16h3" /></svg>
+      <span>BulkCheck</span>
+    </div>
+
+    <div class="folders">
+      <div class="folder" id="folderA" data-side="left" tabindex="0">
+        <div class="folder-label">Folder A</div>
+        <div class="folder-path" id="pathA">Drop a folder here or click Browse</div>
+        <button class="btn" id="browseA">Browse…</button>
+      </div>
+      <button class="icon-btn" id="swap" title="Swap Folder A and Folder B" aria-label="Swap folders">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>
+      </button>
+      <div class="folder" id="folderB" data-side="right" tabindex="0">
+        <div class="folder-label">Folder B</div>
+        <div class="folder-path" id="pathB">Drop a folder here or click Browse</div>
+        <button class="btn" id="browseB">Browse…</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="compare" disabled>Compare</button>
+      <button class="btn" id="export" disabled>Export CSV</button>
+    </div>
+  </header>
+
+  <div class="optionsbar">
+    <label><input type="checkbox" id="optRecursive" checked> Include subfolders</label>
+    <label><input type="checkbox" id="optWs"> Ignore whitespace</label>
+    <label><input type="checkbox" id="optCase"> Ignore upper/lower case</label>
+    <span class="hint">Files are matched by name. Images and videos are skipped.</span>
+    <div class="progress" id="progress" hidden><div class="progress-fill" id="progressFill"></div><span id="progressText"></span></div>
+  </div>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <div class="filters" id="filters"></div>
+      <div class="search"><input type="search" id="search" placeholder="Filter by file name" spellcheck="false"></div>
+      <ul class="list" id="list" tabindex="0" role="listbox" aria-label="Compared files"></ul>
+    </aside>
+
+    <section class="detail" id="detail">
+      <div class="empty" id="empty">
+        <svg viewBox="0 0 24 24" width="44" height="44" aria-hidden="true"><rect x="2" y="3" width="9" height="18" rx="2"/><rect x="13" y="3" width="9" height="18" rx="2"/><path d="M5 8h3M5 12h3M16 8h3M16 12h3M16 16h3" /></svg>
+        <h2>Compare two folders</h2>
+        <p>Choose <b>Folder A</b> and <b>Folder B</b>, then press <b>Compare</b>.<br>Files with the same name are paired up and checked line by line.</p>
+        <p class="muted">Works with text, code, CSV, JSON, XML, logs, PDF, Word (.docx) and Excel (.xlsx). Other files are checked byte for byte.</p>
+      </div>
+
+      <div class="detail-view" id="detailView" hidden>
+        <div class="detail-head">
+          <div class="detail-title">
+            <h2 id="dName"></h2>
+            <div class="detail-sub" id="dSub"></div>
+          </div>
+          <div class="detail-tools">
+            <div class="seg" role="group" aria-label="View">
+              <button id="viewChanges" class="active">Changes only</button>
+              <button id="viewFull">Full file</button>
+            </div>
+            <button class="btn" id="prevChange" title="Previous change (P)">↑ Prev</button>
+            <button class="btn" id="nextChange" title="Next change (N)">↓ Next</button>
+          </div>
+        </div>
+        <div class="diff-cols">
+          <div class="col-head"><span class="tag a">A</span><span class="col-path" id="dPathA"></span></div>
+          <div class="col-head"><span class="tag b">B</span><span class="col-path" id="dPathB"></span></div>
+        </div>
+        <div class="diff" id="diff"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
