@@ -3,7 +3,7 @@
 const path = require('path');
 const fs = require('fs/promises');
 const { app, BrowserWindow, dialog, ipcMain, shell, Menu } = require('electron');
-const { compareFolders, pairDetail } = require('../core/compare');
+const { compareSources, pairDetail } = require('../core/compare');
 const { buildCsv } = require('../core/csv');
 
 let win = null;
@@ -42,7 +42,9 @@ function buildMenu() {
       label: 'File',
       submenu: [
         { label: 'Choose Folder A…', accelerator: 'CmdOrCtrl+1', click: () => win?.webContents.send('menu', 'pick-left') },
+        { label: 'Choose File(s) A…', accelerator: 'CmdOrCtrl+Shift+1', click: () => win?.webContents.send('menu', 'pick-left-files') },
         { label: 'Choose Folder B…', accelerator: 'CmdOrCtrl+2', click: () => win?.webContents.send('menu', 'pick-right') },
+        { label: 'Choose File(s) B…', accelerator: 'CmdOrCtrl+Shift+2', click: () => win?.webContents.send('menu', 'pick-right-files') },
         { label: 'Compare', accelerator: 'F5', click: () => win?.webContents.send('menu', 'compare') },
         { label: 'Export CSV…', accelerator: 'CmdOrCtrl+E', click: () => win?.webContents.send('menu', 'export') },
         { type: 'separator' },
@@ -68,7 +70,7 @@ function buildMenu() {
             type: 'info',
             title: 'About BulkCheck',
             message: `BulkCheck ${app.getVersion()}`,
-            detail: 'Compare files with the same name in two folders and see which lines differ.\n\nImages and videos are skipped. PDF, Word (.docx) and Excel (.xlsx) are compared by their text.',
+            detail: 'Compare two folders, two files, or a set of files, and see which lines differ.\n\nImages and videos are skipped. PDF, Word (.docx) and Excel (.xlsx) are compared by their text.',
           }),
         },
       ],
@@ -77,24 +79,60 @@ function buildMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
-async function isDirectory(p) {
-  try {
-    return (await fs.stat(p)).isDirectory();
-  } catch {
-    return false;
+ipcMain.handle('pick', async (_e, side, mode) => {
+  const label = side === 'left' ? 'A' : 'B';
+  if (mode === 'files') {
+    const res = await dialog.showOpenDialog(win, {
+      title: `Choose file(s) for side ${label}`,
+      properties: ['openFile', 'multiSelections'],
+    });
+    return res.canceled || !res.filePaths.length ? null : { kind: 'files', paths: res.filePaths };
   }
-}
-
-ipcMain.handle('pick-folder', async (_e, title) => {
-  const res = await dialog.showOpenDialog(win, { title, properties: ['openDirectory'] });
-  return res.canceled ? null : res.filePaths[0];
+  const res = await dialog.showOpenDialog(win, { title: `Choose folder for side ${label}`, properties: ['openDirectory'] });
+  return res.canceled ? null : { kind: 'folder', path: res.filePaths[0] };
 });
 
-ipcMain.handle('check-folder', async (_e, p) => (typeof p === 'string' && await isDirectory(p) ? p : null));
+async function statKind(p) {
+  try {
+    const st = await fs.stat(p);
+    if (st.isDirectory()) return 'dir';
+    if (st.isFile()) return 'file';
+  } catch { /* missing */ }
+  return null;
+}
 
-ipcMain.handle('compare', async (event, left, right, opts) => {
-  if (!(await isDirectory(left))) throw new Error('Folder A could not be opened.');
-  if (!(await isDirectory(right))) throw new Error('Folder B could not be opened.');
+/** Turns dropped paths into a source: one folder, or a list of files. */
+ipcMain.handle('source-from-paths', async (_e, paths) => {
+  if (!Array.isArray(paths)) return null;
+  const list = paths.filter((p) => typeof p === 'string' && p);
+  const kinds = await Promise.all(list.map(statKind));
+  const files = list.filter((_, i) => kinds[i] === 'file');
+  if (files.length) return { kind: 'files', paths: files };
+  const dir = list.find((_, i) => kinds[i] === 'dir');
+  return dir ? { kind: 'folder', path: dir } : null;
+});
+
+async function validSource(src, label) {
+  if (src?.kind === 'folder' && typeof src.path === 'string' && (await statKind(src.path)) === 'dir') {
+    return { kind: 'folder', path: src.path };
+  }
+  if (src?.kind === 'files' && Array.isArray(src.paths) && src.paths.length) {
+    const kinds = await Promise.all(src.paths.map((p) => (typeof p === 'string' ? statKind(p) : null)));
+    const missing = src.paths.filter((_, i) => kinds[i] !== 'file');
+    if (missing.length) throw new Error(`Side ${label}: could not open ${missing[0]}`);
+    return { kind: 'files', paths: [...src.paths] };
+  }
+  throw new Error(`Side ${label} could not be opened.`);
+}
+
+function describeSource(src) {
+  if (src.kind === 'folder') return src.path;
+  return src.paths.length === 1 ? src.paths[0] : `${src.paths.length} files: ${src.paths.join('; ')}`;
+}
+
+ipcMain.handle('compare', async (event, leftSrc, rightSrc, opts) => {
+  const left = await validSource(leftSrc, 'A');
+  const right = await validSource(rightSrc, 'B');
   const token = ++runToken;
   const options = {
     recursive: !!opts?.recursive,
@@ -102,7 +140,7 @@ ipcMain.handle('compare', async (event, left, right, opts) => {
     ignoreCase: !!opts?.ignoreCase,
   };
   let lastSent = 0;
-  const results = await compareFolders(left, right, options, (done, total) => {
+  const results = await compareSources(left, right, options, (done, total) => {
     const now = Date.now();
     if (token === runToken && (now - lastSent > 50 || done === total)) {
       lastSent = now;
@@ -110,7 +148,7 @@ ipcMain.handle('compare', async (event, left, right, opts) => {
     }
   });
   if (token !== runToken) return null; // a newer run replaced this one
-  lastRun = { left, right, opts: options, results };
+  lastRun = { left: describeSource(left), right: describeSource(right), opts: options, results };
   return results;
 });
 

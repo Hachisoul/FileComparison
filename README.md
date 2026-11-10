@@ -1,12 +1,16 @@
 # BulkCheck
 
-BulkCheck is a Windows desktop app that compares two folders file by file. Files with the same name are paired up, and for every pair you see whether it is identical or different. Click a file that differs to see the changed lines side by side, with line numbers and the content of each line.
+BulkCheck is a Windows desktop app that compares two folders, two files, or a set of files. Files with the same name are paired up, and for every pair you see whether it is identical or different. Click a file that differs to see the changed lines side by side, with line numbers and the content of each line.
 
 ![BulkCheck screenshot](docs/screenshot.png)
 
 ## Features
 
-- **Pair mode**: pick Folder A and Folder B. Files are matched by name (and by subfolder path), ignoring upper/lower case like Windows does.
+- **Folders or files on each side**:
+  - Two folders: files are matched by name (and by subfolder path), ignoring upper/lower case like Windows does.
+  - One file on each side: the two files are compared directly, even if their names differ.
+  - Several files on each side: files are matched by name.
+  - Files against a folder: each file is compared with the same-named file in the folder, and the rest of the folder is ignored.
 - **Handles 50+ files at once**: the summary list shows how many files are Different, Identical, Missing from one side, or Skipped.
 - **Side-by-side view** with line numbers, changed lines highlighted and the exact changed characters marked. Use "Changes only" or "Full file", and jump between changes with **Prev / Next** (or the `P` / `N` keys).
 - **Supported formats**
@@ -21,14 +25,14 @@ BulkCheck is a Windows desktop app that compares two folders file by file. Files
 
 Download one of these from the latest build:
 
-- `BulkCheck-Setup-1.0.0.exe`: a normal installer with Start menu and desktop shortcuts.
-- `BulkCheck-Portable-1.0.0.exe`: runs without installing, for example from a USB stick.
+- `BulkCheck-Setup-1.1.0.exe`: a normal installer with Start menu and desktop shortcuts.
+- `BulkCheck-Portable-1.1.0.exe`: runs without installing, for example from a USB stick.
 
 Works on Windows 10 and Windows 11 (64-bit). The app is not code-signed, so Windows SmartScreen may show "Windows protected your PC" the first time. Click **More info**, then **Run anyway**.
 
 ## Use
 
-1. Click **Browse…** next to Folder A and Folder B (or drag a folder onto each box).
+1. For side A and side B, click **Folder…** or **Files…** (or drag a folder or files onto each box).
 2. Click **Compare** (or press `F5`).
 3. Click any file in the list to see its differences. Use the chips at the top of the list to filter, or type in the filter box.
 4. Click **Export CSV** to save a report.

@@ -32,8 +32,8 @@ const FILTERS = [
 const STATUS_TEXT = {
   identical: 'Identical',
   different: 'Different',
-  'only-left': 'Only in Folder A',
-  'only-right': 'Only in Folder B',
+  'only-left': 'Only in A',
+  'only-right': 'Only in B',
   skipped: 'Skipped',
   error: 'Error',
 };
@@ -78,22 +78,44 @@ function countFor(key) {
   return state.results.filter((r) => (key === 'only' ? r.status.startsWith('only') : r.status === key)).length;
 }
 
-// ---------- folders ----------
+// ---------- sides (folder or files) ----------
 
-function setFolder(side, p) {
-  state[side] = p;
+const EMPTY_SIDE = 'Drop a folder or files here';
+
+function baseName(p) {
+  return p.split(/[\\/]/).pop();
+}
+
+function describeSide(src) {
+  if (!src) return { text: EMPTY_SIDE, title: '' };
+  if (src.kind === 'folder') return { text: src.path, title: src.path, rtl: true };
+  if (src.paths.length === 1) return { text: src.paths[0], title: src.paths[0], rtl: true };
+  const names = src.paths.map(baseName);
+  return { text: `${names.length} files: ${names.join(', ')}`, title: src.paths.join('\n') };
+}
+
+function sameSource(a, b) {
+  if (!a || !b || a.kind !== b.kind) return false;
+  if (a.kind === 'folder') return a.path === b.path;
+  return a.paths.length === b.paths.length && a.paths.every((p, i) => p === b.paths[i]);
+}
+
+function setSide(side, src) {
+  state[side] = src || null;
   const box = side === 'left' ? $('folderA') : $('folderB');
   const label = side === 'left' ? $('pathA') : $('pathB');
-  box.classList.toggle('set', !!p);
-  // The path is shown right-to-left so the end stays visible; wrap it so punctuation is not reordered.
-  label.textContent = p ? `⁦${p}⁩` : 'Drop a folder here or click Browse';
-  label.title = p || '';
+  box.classList.toggle('set', !!src);
+  const d = describeSide(src);
+  // Paths are shown right-to-left so the end stays visible; isolate them so punctuation is not reordered.
+  label.textContent = d.rtl ? `⁦${d.text}⁩` : d.text;
+  label.style.direction = d.rtl ? 'rtl' : 'ltr';
+  label.title = d.title;
   $('compare').disabled = !(state.left && state.right) || state.running;
 }
 
-async function pick(side) {
-  const p = await api.pickFolder(side === 'left' ? 'Choose Folder A' : 'Choose Folder B');
-  if (p) setFolder(side, p);
+async function pick(side, mode) {
+  const src = await api.pick(side, mode);
+  if (src) setSide(side, src);
 }
 
 function setupDrop(box, side) {
@@ -104,12 +126,11 @@ function setupDrop(box, side) {
   box.addEventListener('drop', async (e) => {
     stop(e);
     box.classList.remove('drop');
-    const file = e.dataTransfer.files[0];
-    if (!file) return;
-    const p = api.pathForFile(file);
-    const dir = p && await api.checkFolder(p);
-    if (dir) setFolder(side, dir);
-    else toast('Please drop a folder, not a file.');
+    const paths = [...e.dataTransfer.files].map((f) => api.pathForFile(f)).filter(Boolean);
+    if (!paths.length) return;
+    const src = await api.sourceFromPaths(paths);
+    if (src) setSide(side, src);
+    else toast('Could not open what was dropped. Drop a folder or files.');
   });
 }
 
@@ -117,8 +138,8 @@ function setupDrop(box, side) {
 
 async function runCompare() {
   if (!state.left || !state.right || state.running) return;
-  if (state.left === state.right) {
-    toast('Folder A and Folder B are the same folder.');
+  if (sameSource(state.left, state.right)) {
+    toast('A and B are the same. Pick something different for one side.');
     return;
   }
   state.running = true;
@@ -471,14 +492,16 @@ async function exportCsv() {
 
 // ---------- wiring ----------
 
-$('browseA').addEventListener('click', () => pick('left'));
-$('browseB').addEventListener('click', () => pick('right'));
+$('folderBtnA').addEventListener('click', () => pick('left', 'folder'));
+$('filesBtnA').addEventListener('click', () => pick('left', 'files'));
+$('folderBtnB').addEventListener('click', () => pick('right', 'folder'));
+$('filesBtnB').addEventListener('click', () => pick('right', 'files'));
 setupDrop($('folderA'), 'left');
 setupDrop($('folderB'), 'right');
 $('swap').addEventListener('click', () => {
   const { left, right } = state;
-  setFolder('left', right);
-  setFolder('right', left);
+  setSide('left', right);
+  setSide('right', left);
 });
 $('compare').addEventListener('click', runCompare);
 $('export').addEventListener('click', exportCsv);
@@ -509,8 +532,10 @@ document.addEventListener('keydown', (e) => {
 });
 
 api.onMenu((action) => {
-  if (action === 'pick-left') pick('left');
-  else if (action === 'pick-right') pick('right');
+  if (action === 'pick-left') pick('left', 'folder');
+  else if (action === 'pick-right') pick('right', 'folder');
+  else if (action === 'pick-left-files') pick('left', 'files');
+  else if (action === 'pick-right-files') pick('right', 'files');
   else if (action === 'compare') runCompare();
   else if (action === 'export') exportCsv();
 });
@@ -519,4 +544,4 @@ renderFilters();
 renderList();
 
 // Used by automated UI checks to preload folders.
-window.__bulkcheckSetFolders = (a, b) => { setFolder('left', a); setFolder('right', b); };
+window.__bulkcheckSetSides = (a, b) => { setSide('left', a); setSide('right', b); };

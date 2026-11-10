@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('fs/promises');
+const path = require('path');
 const { listFiles, matchPairs } = require('./scan');
 const { extract } = require('./extract');
 const { diffLines, inlineDiff } = require('./diff');
@@ -21,8 +22,8 @@ async function comparePair(pair, opts = {}) {
     left: pair.left ? { path: pair.left.abs, size: pair.left.size } : null,
     right: pair.right ? { path: pair.right.abs, size: pair.right.size } : null,
   };
-  if (!pair.left) return { ...base, status: 'only-right', message: 'Only in Folder B' };
-  if (!pair.right) return { ...base, status: 'only-left', message: 'Only in Folder A' };
+  if (!pair.left) return { ...base, status: 'only-right', message: 'Only in B' };
+  if (!pair.right) return { ...base, status: 'only-left', message: 'Only in A' };
 
   try {
     const type = classify(pair.left.abs);
@@ -72,11 +73,45 @@ async function comparePair(pair, opts = {}) {
  * Compares two folders. `onProgress(done, total, entry)` is called after each pair.
  */
 async function compareFolders(leftRoot, rightRoot, opts = {}, onProgress = () => {}) {
-  const [lf, rf] = await Promise.all([
-    listFiles(leftRoot, { recursive: opts.recursive !== false }),
-    listFiles(rightRoot, { recursive: opts.recursive !== false }),
-  ]);
-  const pairs = matchPairs(lf, rf);
+  return compareSources({ kind: 'folder', path: leftRoot }, { kind: 'folder', path: rightRoot }, opts, onProgress);
+}
+
+async function filesOf(paths) {
+  return Promise.all(paths.map(async (abs) => {
+    const st = await fs.stat(abs);
+    return { rel: path.basename(abs), abs, size: st.size };
+  }));
+}
+
+async function sourceFiles(src, opts) {
+  if (src.kind === 'files') return filesOf(src.paths);
+  return listFiles(src.path, { recursive: opts.recursive !== false });
+}
+
+/**
+ * Builds the list of pairs for two sources. A source is
+ *   { kind: 'folder', path } or { kind: 'files', paths: [...] }.
+ * - One file on each side: they are compared directly, even if the names differ.
+ * - Files on one side and a folder on the other: each file is matched to the
+ *   same-named file in the folder; other files in the folder are ignored.
+ * - Otherwise files are matched by name (and subfolder path for folders).
+ */
+async function buildPairs(left, right, opts = {}) {
+  const [lf, rf] = await Promise.all([sourceFiles(left, opts), sourceFiles(right, opts)]);
+  if (left.kind === 'files' && right.kind === 'files' && lf.length === 1 && rf.length === 1) {
+    const [a] = lf;
+    const [b] = rf;
+    const name = a.rel.toLowerCase() === b.rel.toLowerCase() ? a.rel : `${a.rel} ↔ ${b.rel}`;
+    return [{ key: name.toLowerCase(), name, left: a, right: b }];
+  }
+  let pairs = matchPairs(lf, rf);
+  if (left.kind === 'files' && right.kind === 'folder') pairs = pairs.filter((p) => p.left);
+  if (right.kind === 'files' && left.kind === 'folder') pairs = pairs.filter((p) => p.right);
+  return pairs;
+}
+
+async function compareSources(left, right, opts = {}, onProgress = () => {}) {
+  const pairs = await buildPairs(left, right, opts);
   const results = new Array(pairs.length);
   let next = 0;
   let done = 0;
@@ -109,4 +144,4 @@ async function pairDetail(entry, opts = {}) {
   return res;
 }
 
-module.exports = { compareFolders, comparePair, pairDetail };
+module.exports = { compareFolders, compareSources, buildPairs, comparePair, pairDetail };

@@ -247,3 +247,9 @@ button { font: inherit; color: inherit; }
   background: var(--text); color: var(--panel); padding: 10px 16px; border-radius: 8px;
   box-shadow: 0 6px 24px rgba(0,0,0,.2); max-width: 70vw;
 }
+
+.pick-btns { display: flex; gap: 6px; }
+.folder .tag { margin-left: -2px; }
+.optionsbar label { white-space: nowrap; flex: none; }
+.optionsbar .hint { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.optionsbar .progress { flex: none; }

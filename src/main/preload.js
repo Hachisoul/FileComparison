@@ -3,8 +3,8 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('bulk', {
-  pickFolder: (title) => ipcRenderer.invoke('pick-folder', title),
-  checkFolder: (p) => ipcRenderer.invoke('check-folder', p),
+  pick: (side, mode) => ipcRenderer.invoke('pick', side, mode),
+  sourceFromPaths: (paths) => ipcRenderer.invoke('source-from-paths', paths),
   pathForFile: (file) => {
     try {
       return webUtils.getPathForFile(file);

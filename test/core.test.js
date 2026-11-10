@@ -9,7 +9,7 @@ const path = require('path');
 const { diffLines } = require('../src/core/diff');
 const { decodeText, splitLines } = require('../src/core/extract');
 const { matchPairs } = require('../src/core/scan');
-const { compareFolders, pairDetail } = require('../src/core/compare');
+const { compareFolders, compareSources, pairDetail } = require('../src/core/compare');
 const { buildCsv } = require('../src/core/csv');
 
 function tmpFolders(files) {
@@ -118,4 +118,35 @@ test('buildCsv lists every changed line and neutralises formulas', () => {
   assert.ok(csv.startsWith('\ufeff'));
   assert.ok(csv.includes(`x.txt,Different,1 line differs,Changed,2,'=SUM(1),2,"say ""hi"", ok"`));
   assert.ok(csv.includes('y.txt,Identical,Files are identical'));
+});
+
+test('compareSources compares two single files even when names differ', async () => {
+  const { a, b } = tmpFolders({ 'A/old.txt': 'x\ny\n', 'B/new.txt': 'x\nz\n' });
+  const res = await compareSources(
+    { kind: 'files', paths: [path.join(a, 'old.txt')] },
+    { kind: 'files', paths: [path.join(b, 'new.txt')] },
+  );
+  assert.equal(res.length, 1);
+  assert.equal(res[0].name, 'old.txt ↔ new.txt');
+  assert.equal(res[0].status, 'different');
+  assert.equal(res[0].stats.modified, 1);
+});
+
+test('compareSources matches several files by name, and files against a folder', async () => {
+  const { a, b } = tmpFolders({
+    'A/one.txt': '1', 'A/two.txt': '2', 'A/three.txt': '3',
+    'B/one.txt': '1', 'B/two.txt': 'changed', 'B/extra.txt': 'e',
+  });
+  const files = { kind: 'files', paths: ['one.txt', 'two.txt'].map((n) => path.join(a, n)) };
+
+  const vsFiles = await compareSources(files, { kind: 'files', paths: ['one.txt', 'extra.txt'].map((n) => path.join(b, n)) });
+  assert.deepEqual(vsFiles.map((r) => [r.name, r.status]), [
+    ['extra.txt', 'only-right'], ['one.txt', 'identical'], ['two.txt', 'only-left'],
+  ]);
+
+  // Files vs folder: other files in the folder are ignored.
+  const vsFolder = await compareSources(files, { kind: 'folder', path: b });
+  assert.deepEqual(vsFolder.map((r) => [r.name, r.status]), [['one.txt', 'identical'], ['two.txt', 'different']]);
+  const reverse = await compareSources({ kind: 'folder', path: a }, { kind: 'files', paths: [path.join(b, 'two.txt')] });
+  assert.deepEqual(reverse.map((r) => [r.name, r.status]), [['two.txt', 'different']]);
 });
