@@ -15,17 +15,17 @@
 
     <div class="folders">
       <div class="folder" id="folderA" data-side="left" tabindex="0">
-        <div class="folder-label">Folder A</div>
-        <div class="folder-path" id="pathA">Drop a folder here or click Browse</div>
-        <button class="btn" id="browseA">Browse…</button>
+        <span class="tag a">A</span>
+        <div class="folder-path" id="pathA">Drop a folder or files here</div>
+        <div class="pick-btns"><button class="btn" id="folderBtnA" title="Choose a folder for side A">Folder…</button><button class="btn" id="filesBtnA" title="Choose one or more files for side A">Files…</button></div>
       </div>
-      <button class="icon-btn" id="swap" title="Swap Folder A and Folder B" aria-label="Swap folders">
+      <button class="icon-btn" id="swap" title="Swap A and B" aria-label="Swap A and B">
         <svg viewBox="0 0 24 24" width="18" height="18"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>
       </button>
       <div class="folder" id="folderB" data-side="right" tabindex="0">
-        <div class="folder-label">Folder B</div>
-        <div class="folder-path" id="pathB">Drop a folder here or click Browse</div>
-        <button class="btn" id="browseB">Browse…</button>
+        <span class="tag b">B</span>
+        <div class="folder-path" id="pathB">Drop a folder or files here</div>
+        <div class="pick-btns"><button class="btn" id="folderBtnB" title="Choose a folder for side B">Folder…</button><button class="btn" id="filesBtnB" title="Choose one or more files for side B">Files…</button></div>
       </div>
     </div>
 
@@ -39,7 +39,7 @@
     <label><input type="checkbox" id="optRecursive" checked> Include subfolders</label>
     <label><input type="checkbox" id="optWs"> Ignore whitespace</label>
     <label><input type="checkbox" id="optCase"> Ignore upper/lower case</label>
-    <span class="hint">Files are matched by name. Images and videos are skipped.</span>
+    <span class="hint">Files are matched by name; two single files are compared directly. Images and videos are skipped.</span>
     <div class="progress" id="progress" hidden><div class="progress-fill" id="progressFill"></div><span id="progressText"></span></div>
   </div>
 
@@ -53,8 +53,9 @@
     <section class="detail" id="detail">
       <div class="empty" id="empty">
         <svg viewBox="0 0 24 24" width="44" height="44" aria-hidden="true"><rect x="2" y="3" width="9" height="18" rx="2"/><rect x="13" y="3" width="9" height="18" rx="2"/><path d="M5 8h3M5 12h3M16 8h3M16 12h3M16 16h3" /></svg>
-        <h2>Compare two folders</h2>
-        <p>Choose <b>Folder A</b> and <b>Folder B</b>, then press <b>Compare</b>.<br>Files with the same name are paired up and checked line by line.</p>
+        <h2>Compare folders or files</h2>
+        <p>For each side, choose a <b>Folder</b> or one or more <b>Files</b> (or drag them in), then press <b>Compare</b>.</p>
+        <p class="muted">Two folders: files with the same name are paired up.<br>One file on each side: the two files are compared, even if their names differ.<br>Files against a folder: each file is checked against the same-named file in the folder.</p>
         <p class="muted">Works with text, code, CSV, JSON, XML, logs, PDF, Word (.docx) and Excel (.xlsx). Other files are checked byte for byte.</p>
       </div>
 

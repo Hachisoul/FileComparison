@@ -3,8 +3,8 @@
 const STATUS_LABEL = {
   identical: 'Identical',
   different: 'Different',
-  'only-left': 'Only in Folder A',
-  'only-right': 'Only in Folder B',
+  'only-left': 'Only in A',
+  'only-right': 'Only in B',
   skipped: 'Skipped',
   error: 'Error',
 };
@@ -27,8 +27,8 @@ function buildCsv({ leftRoot, rightRoot, results, details }) {
   const lines = [];
   const push = (arr) => lines.push(arr.map(cell).join(','));
   push(['BulkCheck report', new Date().toLocaleString()]);
-  push(['Folder A', leftRoot]);
-  push(['Folder B', rightRoot]);
+  push(['A', leftRoot]);
+  push(['B', rightRoot]);
   lines.push('');
   push(['File', 'Status', 'Summary', 'Change', 'Line in A', 'Content in A', 'Line in B', 'Content in B']);
   for (const e of results) {

@@ -97,9 +97,15 @@ function statsOf(rows) {
  */
 function inlineDiff(lt, rt) {
   if (lt.length + rt.length > 4000) {
-    return { left: [[lt, true]], right: [[rt, true]] };
+    return { left: null, right: null }; // the whole row is already marked as changed
   }
   const parts = lt.length + rt.length > 600 ? Diff.diffWordsWithSpace(lt, rt) : Diff.diffChars(lt, rt);
+  // Lines that share little are shown as wholly changed instead of a confetti of highlights.
+  const common = parts.reduce((n, p) => (p.added || p.removed ? n : n + p.value.length), 0);
+  const chunks = parts.filter((p) => p.added || p.removed).length;
+  if (common < Math.max(lt.length, rt.length) * 0.6 || chunks > 8) {
+    return { left: null, right: null }; // the whole row is already marked as changed
+  }
   const left = [];
   const right = [];
   for (const p of parts) {
