@@ -16,7 +16,7 @@ function cell(v) {
   let s = String(v);
   // Stop spreadsheet apps from treating content as a formula.
   if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
-  if (/[",\r\n]/.test(s)) s = `"${s.replace(/"/g, '""')}"`;
+  if (/[",\r\n]/.test(s) || s !== s.trim()) s = `"${s.replace(/"/g, '""')}"`;
   return s;
 }
 

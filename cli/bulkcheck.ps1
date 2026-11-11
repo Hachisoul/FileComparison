@@ -535,7 +535,8 @@ function ConvertTo-CsvCell($v) {
   if ($null -eq $v) { return '' }
   $s = [string]$v
   if ($s -match '^[=+\-@\t\r]') { $s = "'" + $s }
-  if ($s -match '[",\r\n]') { $s = '"' + $s.Replace('"', '""') + '"' }
+  # Quote cells with commas, quotes, line breaks or leading/trailing spaces so they survive a round trip.
+  if ($s -match '[",\r\n]' -or $s -ne $s.Trim()) { $s = '"' + $s.Replace('"', '""') + '"' }
   return $s
 }
 
