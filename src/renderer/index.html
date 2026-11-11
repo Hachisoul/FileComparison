@@ -13,6 +13,13 @@
       <span>BulkCheck</span>
     </div>
 
+    <div class="seg mode" role="tablist" aria-label="Mode">
+      <button id="modeFiles" class="active" role="tab">Folders &amp; files</button>
+      <button id="modePaste" role="tab">Paste text</button>
+    </div>
+
+    <div class="paste-hint" id="pasteHint">Paste or type text into <b>A</b> and <b>B</b> below, then press <b>Compare</b> (Ctrl+Enter).</div>
+
     <div class="folders">
       <div class="folder" id="folderA" data-side="left" tabindex="0">
         <span class="tag a">A</span>
@@ -36,10 +43,10 @@
   </header>
 
   <div class="optionsbar">
-    <label><input type="checkbox" id="optRecursive" checked> Include subfolders</label>
+    <label class="files-only"><input type="checkbox" id="optRecursive" checked> Include subfolders</label>
     <label><input type="checkbox" id="optWs"> Ignore whitespace</label>
     <label><input type="checkbox" id="optCase"> Ignore upper/lower case</label>
-    <span class="hint">Files are matched by name; two single files are compared directly. Images and videos are skipped.</span>
+    <span class="hint files-only">Files are matched by name; two single files are compared directly. Images and videos are skipped.</span>
     <div class="progress" id="progress" hidden><div class="progress-fill" id="progressFill"></div><span id="progressText"></span></div>
   </div>
 
@@ -51,6 +58,16 @@
     </aside>
 
     <section class="detail" id="detail">
+      <div class="paste-panel" id="pastePanel">
+        <div class="paste-col">
+          <div class="paste-bar"><span class="tag a">A</span><span class="paste-count" id="countA">0 lines</span><button class="btn small" id="clearA">Clear</button></div>
+          <textarea id="pasteA" spellcheck="false" wrap="off" placeholder="Paste text A here"></textarea>
+        </div>
+        <div class="paste-col">
+          <div class="paste-bar"><span class="tag b">B</span><span class="paste-count" id="countB">0 lines</span><button class="btn small" id="clearB">Clear</button></div>
+          <textarea id="pasteB" spellcheck="false" wrap="off" placeholder="Paste text B here"></textarea>
+        </div>
+      </div>
       <div class="empty" id="empty">
         <svg viewBox="0 0 24 24" width="44" height="44" aria-hidden="true"><rect x="2" y="3" width="9" height="18" rx="2"/><rect x="13" y="3" width="9" height="18" rx="2"/><path d="M5 8h3M5 12h3M16 8h3M16 12h3M16 16h3" /></svg>
         <h2>Compare folders or files</h2>

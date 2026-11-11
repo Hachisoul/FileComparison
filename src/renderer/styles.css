@@ -253,3 +253,31 @@ button { font: inherit; color: inherit; }
 .optionsbar label { white-space: nowrap; flex: none; }
 .optionsbar .hint { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .optionsbar .progress { flex: none; }
+
+/* ---------- Paste text mode ---------- */
+.seg.mode { flex: none; }
+.seg.mode button { height: 30px; }
+.paste-hint, .paste-panel { display: none; }
+body.paste-mode .folders,
+body.paste-mode #export,
+body.paste-mode .files-only,
+body.paste-mode .sidebar,
+body.paste-mode #empty { display: none !important; }
+body.paste-mode .paste-hint { display: block; flex: 1; min-width: 0; color: var(--muted); }
+body.paste-mode .paste-panel {
+  display: grid; grid-template-columns: 1fr 1fr; flex: none;
+  border-bottom: 1px solid var(--border); background: var(--panel);
+}
+.paste-col { display: flex; flex-direction: column; min-width: 0; }
+.paste-col + .paste-col { border-left: 1px solid var(--border); }
+.paste-bar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--panel-2); border-bottom: 1px solid var(--border); }
+.paste-count { flex: 1; color: var(--muted); font-size: 12px; }
+.btn.small { height: 24px; padding: 0 10px; font-size: 12px; }
+.paste-col textarea {
+  height: 30vh; min-height: 80px; max-height: 70vh; resize: vertical;
+  border: 0; outline: none; padding: 8px 10px; margin: 0;
+  background: var(--panel); color: var(--text);
+  font: 12.5px/1.55 var(--mono); tab-size: 4; user-select: text;
+}
+.paste-col textarea:focus { box-shadow: inset 0 0 0 2px var(--accent-soft); }
+.topbar { min-height: 62px; }

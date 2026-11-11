@@ -11,6 +11,7 @@ BulkCheck is a Windows desktop app that compares two folders, two files, or a se
   - One file on each side: the two files are compared directly, even if their names differ.
   - Several files on each side: files are matched by name.
   - Files against a folder: each file is compared with the same-named file in the folder, and the rest of the folder is ignored.
+- **Paste text mode**: switch to **Paste text**, paste or type text into the A and B boxes, and press **Compare** (or Ctrl+Enter) to see the differences side by side. No files needed.
 - **Handles 50+ files at once**: the summary list shows how many files are Different, Identical, Missing from one side, or Skipped.
 - **Side-by-side view** with line numbers, changed lines highlighted and the exact changed characters marked. Use "Changes only" or "Full file", and jump between changes with **Prev / Next** (or the `P` / `N` keys).
 - **Supported formats**
@@ -25,8 +26,8 @@ BulkCheck is a Windows desktop app that compares two folders, two files, or a se
 
 Download one of these from the latest build:
 
-- `BulkCheck-Setup-1.1.0.exe`: a normal installer with Start menu and desktop shortcuts.
-- `BulkCheck-Portable-1.1.0.exe`: runs without installing, for example from a USB stick.
+- `BulkCheck-Setup-1.2.0.exe`: a normal installer with Start menu and desktop shortcuts.
+- `BulkCheck-Portable-1.2.0.exe`: runs without installing, for example from a USB stick.
 
 Works on Windows 10 and Windows 11 (64-bit). The app is not code-signed, so Windows SmartScreen may show "Windows protected your PC" the first time. Click **More info**, then **Run anyway**.
 
