@@ -37,6 +37,14 @@ Works on Windows 10 and Windows 11 (64-bit). The app is not code-signed, so Wind
 3. Click any file in the list to see its differences. Use the chips at the top of the list to filter, or type in the filter box.
 4. Click **Export CSV** to save a report.
 
+## Command-line version
+
+If your PC doesn't allow running the app, use the PowerShell script in [`cli/`](cli/README.md). It needs nothing installed:
+
+```bat
+cli\bulkcheck.cmd "C:\Release 2.3" "C:\Release 2.4" -Html report.html
+```
+
 ## Develop
 
 Requires Node.js 22.
