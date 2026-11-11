@@ -3,7 +3,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const { listFiles, matchPairs } = require('./scan');
-const { extract } = require('./extract');
+const { extract, splitLines } = require('./extract');
 const { diffLines, inlineDiff } = require('./diff');
 const { classify } = require('./filetypes');
 
@@ -144,4 +144,13 @@ async function pairDetail(entry, opts = {}) {
   return res;
 }
 
-module.exports = { compareFolders, compareSources, buildPairs, comparePair, pairDetail };
+/** Compares two pasted texts. Returns { rows, stats, approximate } with inline highlights. */
+function compareTexts(a, b, opts = {}) {
+  const res = diffLines(splitLines(a), splitLines(b), opts);
+  for (const row of res.rows) {
+    if (row.t === 'mod') row.hl = inlineDiff(row.lt, row.rt);
+  }
+  return res;
+}
+
+module.exports = { compareTexts, compareFolders, compareSources, buildPairs, comparePair, pairDetail };

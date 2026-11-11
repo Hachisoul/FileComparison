@@ -9,7 +9,7 @@ const path = require('path');
 const { diffLines } = require('../src/core/diff');
 const { decodeText, splitLines } = require('../src/core/extract');
 const { matchPairs } = require('../src/core/scan');
-const { compareFolders, compareSources, pairDetail } = require('../src/core/compare');
+const { compareFolders, compareSources, compareTexts, pairDetail } = require('../src/core/compare');
 const { buildCsv } = require('../src/core/csv');
 
 function tmpFolders(files) {
@@ -149,4 +149,14 @@ test('compareSources matches several files by name, and files against a folder',
   assert.deepEqual(vsFolder.map((r) => [r.name, r.status]), [['one.txt', 'identical'], ['two.txt', 'different']]);
   const reverse = await compareSources({ kind: 'folder', path: a }, { kind: 'files', paths: [path.join(b, 'two.txt')] });
   assert.deepEqual(reverse.map((r) => [r.name, r.status]), [['two.txt', 'different']]);
+});
+
+test('compareTexts compares pasted text line by line', () => {
+  const res = compareTexts('one\r\ntwo\nthree', 'one\nTWO\nthree\nfour\n');
+  assert.deepEqual([res.stats.modified, res.stats.added, res.stats.deleted], [1, 1, 0]);
+  const mod = res.rows.find((r) => r.t === 'mod');
+  assert.equal(mod.lt, 'two');
+  assert.equal(mod.rt, 'TWO');
+  assert.equal(compareTexts('one\ntwo', 'ONE\ntwo', { ignoreCase: true }).stats.changed, 0);
+  assert.equal(compareTexts('', '').rows.length, 0);
 });

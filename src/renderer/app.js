@@ -18,6 +18,8 @@ const state = {
   blocks: [], // DOM elements that start each change block
   blockIdx: -1,
   running: false,
+  mode: 'files', // 'files' | 'paste'
+  pasteResult: null,
 };
 
 const FILTERS = [
@@ -137,6 +139,7 @@ function setupDrop(box, side) {
 // ---------- compare ----------
 
 async function runCompare() {
+  if (state.mode === 'paste') return runPasteCompare();
   if (!state.left || !state.right || state.running) return;
   if (sameSource(state.left, state.right)) {
     toast('A and B are the same. Pick something different for one side.');
@@ -471,7 +474,90 @@ function setView(v) {
   state.view = v;
   $('viewChanges').classList.toggle('active', v === 'changes');
   $('viewFull').classList.toggle('active', v === 'full');
+  if (state.mode === 'paste') { if (state.pasteResult) showPasteResult(); return; }
   if (state.selected != null) select(state.selected);
+}
+
+
+// ---------- paste text mode ----------
+
+function lineCount(text) {
+  if (!text) return 0;
+  const n = text.split(/\r\n|\r|\n/).length;
+  return /(\r\n|\r|\n)$/.test(text) ? n - 1 : n;
+}
+
+function updatePasteCounts() {
+  for (const [ta, out] of [['pasteA', 'countA'], ['pasteB', 'countB']]) {
+    const n = lineCount($(ta).value);
+    $(out).textContent = `${n.toLocaleString()} line${n === 1 ? '' : 's'}`;
+  }
+  if (state.mode === 'paste') $('compare').disabled = state.running || (!$('pasteA').value && !$('pasteB').value);
+}
+
+function setMode(mode) {
+  state.mode = mode;
+  document.body.classList.toggle('paste-mode', mode === 'paste');
+  $('modeFiles').classList.toggle('active', mode === 'files');
+  $('modePaste').classList.toggle('active', mode === 'paste');
+  if (mode === 'paste') {
+    updatePasteCounts();
+    if (state.pasteResult) showPasteResult();
+    else $('detailView').hidden = true;
+    $('pasteA').focus();
+  } else {
+    $('compare').disabled = !(state.left && state.right) || state.running;
+    if (state.selected != null && state.results[state.selected]) select(state.selected);
+    else showEmpty();
+  }
+}
+
+async function runPasteCompare() {
+  const a = $('pasteA').value;
+  const b = $('pasteB').value;
+  if (!a && !b) {
+    toast('Paste some text into A and B first.');
+    return;
+  }
+  const opts = { ignoreWhitespace: $('optWs').checked, ignoreCase: $('optCase').checked };
+  try {
+    state.pasteResult = await api.compareText(a, b, opts);
+    showPasteResult();
+  } catch (err) {
+    toast(`Could not compare: ${err.message}`, 6000);
+  }
+}
+
+function showPasteResult() {
+  const res = state.pasteResult;
+  const changed = res.stats.changed;
+  const status = changed === 0 ? 'identical' : 'different';
+  $('detailView').hidden = false;
+  $('dName').textContent = 'Pasted text';
+  const sub = $('dSub');
+  sub.replaceChildren();
+  const badge = el('span', `badge s-${status}`);
+  badge.append(el('span', `dot s-${status}`), el('span', null, STATUS_TEXT[status]));
+  let msg = changed === 0 ? 'Same content' : (changed === 1 ? '1 line differs' : `${changed} lines differ`);
+  if (changed && (res.stats.added || res.stats.deleted)) {
+    msg += ` (${res.stats.modified} changed, ${res.stats.added} added, ${res.stats.deleted} removed)`;
+  }
+  sub.append(badge, el('span', null, msg));
+  if (res.approximate) sub.append(el('span', null, '· very different texts, lines compared in order'));
+  for (const [node, label] of [[$('dPathA'), 'Text A'], [$('dPathB'), 'Text B']]) {
+    node.textContent = label;
+    node.title = '';
+    node.onclick = null;
+  }
+  $('viewChanges').disabled = false;
+  $('viewFull').disabled = false;
+  if (changed === 0 && state.view === 'changes') {
+    state.rows = res.rows;
+    return clearDetail('Both texts are the same. Switch to “Full file” to view them.');
+  }
+  state.rows = res.rows;
+  buildDisplay();
+  renderDisplay(true);
 }
 
 // ---------- export ----------
@@ -499,6 +585,7 @@ $('filesBtnB').addEventListener('click', () => pick('right', 'files'));
 setupDrop($('folderA'), 'left');
 setupDrop($('folderB'), 'right');
 $('swap').addEventListener('click', () => {
+  if (state.mode === 'paste') return;
   const { left, right } = state;
   setSide('left', right);
   setSide('right', left);
@@ -514,19 +601,28 @@ $('search').addEventListener('input', (e) => {
   renderList();
 });
 for (const id of ['optWs', 'optCase', 'optRecursive']) {
-  $(id).addEventListener('change', () => { if (state.results.length) runCompare(); });
+  $(id).addEventListener('change', () => {
+    if (state.mode === 'paste') { if (state.pasteResult) runPasteCompare(); }
+    else if (state.results.length) runCompare();
+  });
 }
+$('modeFiles').addEventListener('click', () => setMode('files'));
+$('modePaste').addEventListener('click', () => setMode('paste'));
+$('pasteA').addEventListener('input', updatePasteCounts);
+$('pasteB').addEventListener('input', updatePasteCounts);
+$('clearA').addEventListener('click', () => { $('pasteA').value = ''; updatePasteCounts(); $('pasteA').focus(); });
+$('clearB').addEventListener('click', () => { $('pasteB').value = ''; updatePasteCounts(); $('pasteB').focus(); });
 
 // Stop the window from navigating when something is dropped outside the boxes.
 window.addEventListener('dragover', (e) => e.preventDefault());
 window.addEventListener('drop', (e) => e.preventDefault());
 
 document.addEventListener('keydown', (e) => {
-  const typing = e.target.tagName === 'INPUT';
+  const typing = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
   if (e.key === 'Enter' && e.ctrlKey) { runCompare(); return; }
   if (typing) return;
-  if (e.key === 'ArrowDown') { e.preventDefault(); moveSelection(1); }
-  else if (e.key === 'ArrowUp') { e.preventDefault(); moveSelection(-1); }
+  if (state.mode === 'files' && e.key === 'ArrowDown') { e.preventDefault(); moveSelection(1); }
+  else if (state.mode === 'files' && e.key === 'ArrowUp') { e.preventDefault(); moveSelection(-1); }
   else if (e.key === 'n' || e.key === 'N') jump(1);
   else if (e.key === 'p' || e.key === 'P') jump(-1);
 });
@@ -536,8 +632,9 @@ api.onMenu((action) => {
   else if (action === 'pick-right') pick('right', 'folder');
   else if (action === 'pick-left-files') pick('left', 'files');
   else if (action === 'pick-right-files') pick('right', 'files');
+  else if (action === 'paste-mode') setMode(state.mode === 'paste' ? 'files' : 'paste');
   else if (action === 'compare') runCompare();
-  else if (action === 'export') exportCsv();
+  else if (action === 'export' && state.mode === 'files') exportCsv();
 });
 
 renderFilters();

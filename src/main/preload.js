@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('bulk', {
   },
   compare: (left, right, opts) => ipcRenderer.invoke('compare', left, right, opts),
   detail: (id) => ipcRenderer.invoke('detail', id),
+  compareText: (a, b, opts) => ipcRenderer.invoke('compare-text', a, b, opts),
   exportCsv: () => ipcRenderer.invoke('export-csv'),
   reveal: (p) => ipcRenderer.invoke('open-path', p),
   onProgress: (cb) => ipcRenderer.on('progress', (_e, p) => cb(p)),

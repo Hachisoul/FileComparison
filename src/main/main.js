@@ -3,7 +3,7 @@
 const path = require('path');
 const fs = require('fs/promises');
 const { app, BrowserWindow, dialog, ipcMain, shell, Menu } = require('electron');
-const { compareSources, pairDetail } = require('../core/compare');
+const { compareSources, pairDetail, compareTexts } = require('../core/compare');
 const { buildCsv } = require('../core/csv');
 
 let win = null;
@@ -45,10 +45,23 @@ function buildMenu() {
         { label: 'Choose File(s) A…', accelerator: 'CmdOrCtrl+Shift+1', click: () => win?.webContents.send('menu', 'pick-left-files') },
         { label: 'Choose Folder B…', accelerator: 'CmdOrCtrl+2', click: () => win?.webContents.send('menu', 'pick-right') },
         { label: 'Choose File(s) B…', accelerator: 'CmdOrCtrl+Shift+2', click: () => win?.webContents.send('menu', 'pick-right-files') },
+        { label: 'Paste Text Mode', accelerator: 'CmdOrCtrl+T', click: () => win?.webContents.send('menu', 'paste-mode') },
         { label: 'Compare', accelerator: 'F5', click: () => win?.webContents.send('menu', 'compare') },
         { label: 'Export CSV…', accelerator: 'CmdOrCtrl+E', click: () => win?.webContents.send('menu', 'export') },
         { type: 'separator' },
         { role: 'quit', label: 'Exit' },
+      ],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
       ],
     },
     {
@@ -151,6 +164,11 @@ ipcMain.handle('compare', async (event, leftSrc, rightSrc, opts) => {
   lastRun = { left: describeSource(left), right: describeSource(right), opts: options, results };
   return results;
 });
+
+ipcMain.handle('compare-text', async (_e, a, b, opts) => compareTexts(String(a ?? ''), String(b ?? ''), {
+  ignoreWhitespace: !!opts?.ignoreWhitespace,
+  ignoreCase: !!opts?.ignoreCase,
+}));
 
 ipcMain.handle('detail', async (_e, id) => {
   if (!lastRun) return null;
