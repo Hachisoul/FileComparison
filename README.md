@@ -20,14 +20,15 @@ BulkCheck is a Windows desktop app that compares two folders, two files, or a se
   - Other files (for example `.zip`, `.exe`, `.doc`, `.xls`) are compared byte for byte and reported as identical or different.
   - **Images and videos are skipped.**
 - **Options**: include subfolders, ignore whitespace, ignore upper/lower case. Windows (CRLF) and Unix (LF) line endings are always treated as the same.
+- **Find in page** (`Ctrl+F`): highlights every match in the file list and the side-by-side view. Press `Enter` / `F3` for the next match, `Shift+Enter` / `Shift+F3` for the previous one, and `Esc` to close. **Aa** turns on Match case. Matches in unchanged lines that are folded away are counted as "+N in hidden lines"; switch to **Full file** to see them.
 - **Export CSV**: one row per changed line (file, change type, line in A, content in A, line in B, content in B). Opens directly in Excel.
 
 ## Install
 
 Download one of these from the latest build:
 
-- `BulkCheck-Setup-1.2.0.exe`: a normal installer with Start menu and desktop shortcuts.
-- `BulkCheck-Portable-1.2.0.exe`: runs without installing, for example from a USB stick.
+- `BulkCheck-Setup-1.3.0.exe`: a normal installer with Start menu and desktop shortcuts.
+- `BulkCheck-Portable-1.3.0.exe`: runs without installing, for example from a USB stick.
 
 Works on Windows 10 and Windows 11 (64-bit). The app is not code-signed, so Windows SmartScreen may show "Windows protected your PC" the first time. Click **More info**, then **Run anyway**.
 

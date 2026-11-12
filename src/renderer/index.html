@@ -100,7 +100,18 @@
     </section>
   </main>
 
+  <div class="findbar" id="findBar" role="search" hidden>
+    <input type="text" id="findInput" placeholder="Find in page" spellcheck="false" aria-label="Find in page">
+    <span class="find-count" id="findCount" aria-live="polite"></span>
+    <span class="find-extra" id="findExtra" title="Some matches are in unchanged lines that are folded away or not loaded yet. Switch to “Full file”, click the folded lines, or click “Show more” to see them." hidden></span>
+    <button class="find-btn" id="findCase" title="Match case" aria-label="Match case" aria-pressed="false">Aa</button>
+    <button class="find-btn" id="findPrev" title="Previous match (Shift+Enter)" aria-label="Previous match"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 15l6-6 6 6"/></svg></button>
+    <button class="find-btn" id="findNext" title="Next match (Enter)" aria-label="Next match"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button class="find-btn" id="findClose" title="Close (Esc)" aria-label="Close find"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
+  <script src="find.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

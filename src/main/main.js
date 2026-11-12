@@ -62,6 +62,11 @@ function buildMenu() {
         { role: 'copy' },
         { role: 'paste' },
         { role: 'selectAll' },
+        { type: 'separator' },
+        // The page handles these keys itself, so they also work while typing in the find box.
+        { label: 'Find…', accelerator: 'CmdOrCtrl+F', registerAccelerator: false, click: () => win?.webContents.send('menu', 'find') },
+        { label: 'Find Next', accelerator: 'F3', registerAccelerator: false, click: () => win?.webContents.send('menu', 'find-next') },
+        { label: 'Find Previous', accelerator: 'Shift+F3', registerAccelerator: false, click: () => win?.webContents.send('menu', 'find-prev') },
       ],
     },
     {
