@@ -34,7 +34,7 @@ async function comparePair(pair, opts = {}) {
       return { ...base, status: 'identical', format: FORMAT_NAME[type] || 'File', message: 'Files are identical' };
     }
 
-    const [l, r] = await Promise.all([extract(pair.left.abs), extract(pair.right.abs)]);
+    const [l, r] = await Promise.all([extract(pair.left.abs, opts), extract(pair.right.abs, opts)]);
 
     if (l.kind === 'text' && r.kind === 'text') {
       const { stats, approximate } = diffLines(l.lines, r.lines, opts);
@@ -135,7 +135,7 @@ async function compareSources(left, right, opts = {}, onProgress = () => {}) {
 /** Full line rows for one compared entry, with inline highlights on modified lines. */
 async function pairDetail(entry, opts = {}) {
   if (!entry.left || !entry.right) return { rows: [], note: entry.message };
-  const [l, r] = await Promise.all([extract(entry.left.path), extract(entry.right.path)]);
+  const [l, r] = await Promise.all([extract(entry.left.path, opts), extract(entry.right.path, opts)]);
   if (l.kind !== 'text' || r.kind !== 'text') return { rows: [], note: entry.message };
   const res = diffLines(l.lines, r.lines, opts);
   for (const row of res.rows) {

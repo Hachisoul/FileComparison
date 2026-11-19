@@ -156,6 +156,7 @@ async function runCompare() {
     recursive: $('optRecursive').checked,
     ignoreWhitespace: $('optWs').checked,
     ignoreCase: $('optCase').checked,
+    skipBlankHeader: $('optHeader').checked,
   };
   const prevName = state.selected != null ? state.results[state.selected]?.name : null;
   try {
@@ -519,7 +520,7 @@ async function runPasteCompare() {
     toast('Paste some text into A and B first.');
     return;
   }
-  const opts = { ignoreWhitespace: $('optWs').checked, ignoreCase: $('optCase').checked };
+  const opts = { ignoreWhitespace: $('optWs').checked, ignoreCase: $('optCase').checked, skipBlankHeader: $('optHeader').checked };
   try {
     state.pasteResult = await api.compareText(a, b, opts);
     showPasteResult();
@@ -600,7 +601,7 @@ $('search').addEventListener('input', (e) => {
   state.query = e.target.value;
   renderList();
 });
-for (const id of ['optWs', 'optCase', 'optRecursive']) {
+for (const id of ['optWs', 'optCase', 'optHeader', 'optRecursive']) {
   $(id).addEventListener('change', () => {
     if (state.mode === 'paste') { if (state.pasteResult) runPasteCompare(); }
     else if (state.results.length) runCompare();

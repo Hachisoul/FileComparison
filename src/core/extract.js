@@ -12,7 +12,7 @@ const MAX_TEXT_BYTES = 64 * 1024 * 1024; // larger files are compared byte for b
  *   { kind: 'binary', buf: Buffer, format }
  *   { kind: 'skipped', reason }
  */
-async function extract(absPath) {
+async function extract(absPath, opts = {}) {
   const type = classify(absPath);
   if (type === 'image') return { kind: 'skipped', reason: 'Image file (not compared)' };
   if (type === 'video') return { kind: 'skipped', reason: 'Video file (not compared)' };
@@ -21,7 +21,7 @@ async function extract(absPath) {
 
   if (type === 'pdf') return { kind: 'text', lines: await pdfLines(buf), format: 'PDF text' };
   if (type === 'docx') return { kind: 'text', lines: await docxLines(buf), format: 'Word text' };
-  if (type === 'xlsx') return { kind: 'text', lines: await xlsxLines(buf), format: 'Excel cells' };
+  if (type === 'xlsx') return { kind: 'text', lines: await xlsxLines(buf, opts), format: 'Excel cells' };
 
   if (buf.length > MAX_TEXT_BYTES) return { kind: 'binary', buf, format: 'Large file' };
   const text = decodeText(buf);
@@ -156,19 +156,26 @@ function cellText(v) {
   return String(v).replace(/\r?\n/g, ' ');
 }
 
-async function xlsxLines(buf) {
+/**
+ * One line per non-empty row: "Row N: a | b | c". With `skipBlankHeader`, blank
+ * rows above a sheet's first row with data are removed, so rows are numbered from it.
+ */
+async function xlsxLines(buf, { skipBlankHeader = false } = {}) {
   const ExcelJS = require('exceljs');
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buf);
   const lines = [];
   wb.eachSheet((sheet) => {
     lines.push(`--- Sheet: ${sheet.name} ---`);
+    let skipped = null; // blank rows above the first row with data
     sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       const vals = [];
       const count = row.cellCount;
       for (let c = 1; c <= count; c++) vals.push(cellText(row.getCell(c).value));
       while (vals.length && vals[vals.length - 1] === '') vals.pop();
-      if (vals.length) lines.push(`Row ${rowNumber}: ${vals.join(' | ')}`);
+      if (!vals.length) return;
+      if (skipped === null) skipped = skipBlankHeader ? rowNumber - 1 : 0;
+      lines.push(`Row ${rowNumber - skipped}: ${vals.join(' | ')}`);
     });
   });
   return lines;

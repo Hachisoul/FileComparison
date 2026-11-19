@@ -156,6 +156,7 @@ ipcMain.handle('compare', async (event, leftSrc, rightSrc, opts) => {
     recursive: !!opts?.recursive,
     ignoreWhitespace: !!opts?.ignoreWhitespace,
     ignoreCase: !!opts?.ignoreCase,
+    skipBlankHeader: !!opts?.skipBlankHeader,
   };
   let lastSent = 0;
   const results = await compareSources(left, right, options, (done, total) => {
@@ -173,6 +174,7 @@ ipcMain.handle('compare', async (event, leftSrc, rightSrc, opts) => {
 ipcMain.handle('compare-text', async (_e, a, b, opts) => compareTexts(String(a ?? ''), String(b ?? ''), {
   ignoreWhitespace: !!opts?.ignoreWhitespace,
   ignoreCase: !!opts?.ignoreCase,
+  skipBlankHeader: !!opts?.skipBlankHeader,
 }));
 
 ipcMain.handle('detail', async (_e, id) => {
