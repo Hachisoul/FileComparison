@@ -62,6 +62,11 @@ function buildMenu() {
         { role: 'copy' },
         { role: 'paste' },
         { role: 'selectAll' },
+        { type: 'separator' },
+        // The page handles these keys itself, so they also work while typing in the find box.
+        { label: 'Find…', accelerator: 'CmdOrCtrl+F', registerAccelerator: false, click: () => win?.webContents.send('menu', 'find') },
+        { label: 'Find Next', accelerator: 'F3', registerAccelerator: false, click: () => win?.webContents.send('menu', 'find-next') },
+        { label: 'Find Previous', accelerator: 'Shift+F3', registerAccelerator: false, click: () => win?.webContents.send('menu', 'find-prev') },
       ],
     },
     {
@@ -151,6 +156,7 @@ ipcMain.handle('compare', async (event, leftSrc, rightSrc, opts) => {
     recursive: !!opts?.recursive,
     ignoreWhitespace: !!opts?.ignoreWhitespace,
     ignoreCase: !!opts?.ignoreCase,
+    skipBlankHeader: !!opts?.skipBlankHeader,
   };
   let lastSent = 0;
   const results = await compareSources(left, right, options, (done, total) => {
@@ -168,6 +174,7 @@ ipcMain.handle('compare', async (event, leftSrc, rightSrc, opts) => {
 ipcMain.handle('compare-text', async (_e, a, b, opts) => compareTexts(String(a ?? ''), String(b ?? ''), {
   ignoreWhitespace: !!opts?.ignoreWhitespace,
   ignoreCase: !!opts?.ignoreCase,
+  skipBlankHeader: !!opts?.skipBlankHeader,
 }));
 
 ipcMain.handle('detail', async (_e, id) => {

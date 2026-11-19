@@ -13,10 +13,24 @@ function normalizer({ ignoreWhitespace = false, ignoreCase = false } = {}) {
 
 /**
  * Line-by-line comparison of two arrays of lines.
+ * With `skipBlankHeader`, blank lines at the top of either side are left out;
+ * line numbers still count them, so they match the file.
  * Returns { rows, stats } where each row is
  *   { t: 'eq'|'mod'|'del'|'add', l: leftLineNo|null, lt: leftText|null, r: rightLineNo|null, rt: rightText|null }
  */
 function diffLines(left, right, opts = {}) {
+  if (opts.skipBlankHeader) {
+    const offL = leadingBlankLines(left);
+    const offR = leadingBlankLines(right);
+    if (offL || offR) {
+      const res = diffLines(left.slice(offL), right.slice(offR), { ...opts, skipBlankHeader: false });
+      for (const row of res.rows) {
+        if (row.l != null) row.l += offL;
+        if (row.r != null) row.r += offR;
+      }
+      return res;
+    }
+  }
   const norm = normalizer(opts);
   const a = left.map(norm);
   const b = right.map(norm);
@@ -77,6 +91,13 @@ function diffLines(left, right, opts = {}) {
   }
   flush();
   return { rows, stats: statsOf(rows), approximate: false };
+}
+
+/** Number of blank (empty or whitespace-only) lines at the top. */
+function leadingBlankLines(lines) {
+  let n = 0;
+  while (n < lines.length && lines[n].trim() === '') n++;
+  return n;
 }
 
 function statsOf(rows) {

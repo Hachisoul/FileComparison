@@ -156,6 +156,7 @@ async function runCompare() {
     recursive: $('optRecursive').checked,
     ignoreWhitespace: $('optWs').checked,
     ignoreCase: $('optCase').checked,
+    skipBlankHeader: $('optHeader').checked,
   };
   const prevName = state.selected != null ? state.results[state.selected]?.name : null;
   try {
@@ -519,7 +520,7 @@ async function runPasteCompare() {
     toast('Paste some text into A and B first.');
     return;
   }
-  const opts = { ignoreWhitespace: $('optWs').checked, ignoreCase: $('optCase').checked };
+  const opts = { ignoreWhitespace: $('optWs').checked, ignoreCase: $('optCase').checked, skipBlankHeader: $('optHeader').checked };
   try {
     state.pasteResult = await api.compareText(a, b, opts);
     showPasteResult();
@@ -600,7 +601,7 @@ $('search').addEventListener('input', (e) => {
   state.query = e.target.value;
   renderList();
 });
-for (const id of ['optWs', 'optCase', 'optRecursive']) {
+for (const id of ['optWs', 'optCase', 'optHeader', 'optRecursive']) {
   $(id).addEventListener('change', () => {
     if (state.mode === 'paste') { if (state.pasteResult) runPasteCompare(); }
     else if (state.results.length) runCompare();
@@ -635,6 +636,31 @@ api.onMenu((action) => {
   else if (action === 'paste-mode') setMode(state.mode === 'paste' ? 'files' : 'paste');
   else if (action === 'compare') runCompare();
   else if (action === 'export' && state.mode === 'files') exportCsv();
+  else if (action === 'find') window.FindBar.open();
+  else if (action === 'find-next') window.FindBar.next();
+  else if (action === 'find-prev') window.FindBar.prev();
+});
+
+// Find in page also counts matches in diff lines that are not on screen (folded or not loaded yet).
+window.FindBar.setHiddenCounter((re) => {
+  if ($('detailView').hidden || !state.rows.length || !$('diff').querySelector('.diff-table')) return 0;
+  const shown = new Uint8Array(state.rows.length);
+  for (let p = 0; p < state.rendered && p < state.display.length; p++) {
+    const item = state.display[p];
+    if (typeof item === 'number') shown[item] = 1;
+  }
+  let n = 0;
+  const count = (t) => {
+    if (!t) return;
+    re.lastIndex = 0;
+    while (re.exec(t)) n++;
+  };
+  for (let i = 0; i < state.rows.length; i++) {
+    if (shown[i]) continue;
+    count(state.rows[i].lt);
+    count(state.rows[i].rt);
+  }
+  return n;
 });
 
 renderFilters();

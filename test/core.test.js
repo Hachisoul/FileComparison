@@ -160,3 +160,34 @@ test('compareTexts compares pasted text line by line', () => {
   assert.equal(compareTexts('one\ntwo', 'ONE\ntwo', { ignoreCase: true }).stats.changed, 0);
   assert.equal(compareTexts('', '').rows.length, 0);
 });
+
+test('skipBlankHeader leaves out blank lines at the top and keeps real line numbers', () => {
+  const left = ['', '   ', 'id,name', '1,Ann'];
+  const right = ['id,name', '1,Ann', '2,Bob'];
+  assert.equal(diffLines(left, right).stats.changed, 3);
+  const { rows, stats } = diffLines(left, right, { skipBlankHeader: true });
+  assert.deepEqual(stats, { modified: 0, added: 1, deleted: 0, same: 2, changed: 1 });
+  assert.deepEqual(rows.map((r) => [r.t, r.l, r.r]), [['eq', 3, 1], ['eq', 4, 2], ['add', null, 3]]);
+  // A blank line further down is still compared.
+  assert.equal(diffLines(['a', '', 'b'], ['a', 'b'], { skipBlankHeader: true }).stats.changed, 1);
+  assert.equal(compareTexts('\n\nx\ny', 'x\ny', { skipBlankHeader: true }).stats.changed, 0);
+});
+
+test('skipBlankHeader numbers Excel rows from the first row with data', async () => {
+  const ExcelJS = require('exceljs');
+  async function book(firstRow) {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Data');
+    ws.getRow(firstRow).values = ['id', 'name'];
+    ws.getRow(firstRow + 1).values = [1, 'Ann'];
+    return Buffer.from(await wb.xlsx.writeBuffer());
+  }
+  const { a, b } = tmpFolders({ 'A/x.txt': '', 'B/x.txt': '' });
+  fs.writeFileSync(path.join(a, 'book.xlsx'), await book(2));
+  fs.writeFileSync(path.join(b, 'book.xlsx'), await book(1));
+  const src = (p) => ({ kind: 'files', paths: [path.join(p, 'book.xlsx')] });
+  const [off] = await compareSources(src(a), src(b), {});
+  assert.equal(off.status, 'different');
+  const [on] = await compareSources(src(a), src(b), { skipBlankHeader: true });
+  assert.equal(on.status, 'identical');
+});
